@@ -1,3 +1,4 @@
+import 'package:bmt/gesture/gestures_unlock.dart';
 import 'package:bmt/login_page.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -12,10 +13,12 @@ import 'model/email.dart';
 
 void main() async {
   var db = await Isar.open([UserSchema]);
-  runApp(app(db));
+  Controller c = Controller(Dio(), db);
+  await c.manualInit();
+  runApp(app(c));
 }
 
-GetMaterialApp app(Isar db) {
+GetMaterialApp app(Controller c) {
   return GetMaterialApp(
     initialRoute: "/",
     translations: Messages(),
@@ -25,9 +28,9 @@ GetMaterialApp app(Isar db) {
     getPages: [
       GetPage(
           name: "/",
-          page: () => const Home(),
-          binding: BindingsBuilder(() =>
-              Get.put<Controller>(Controller(Dio(), db), permanent: true))),
+          page: () => Home(),
+          binding:
+              BindingsBuilder(() => Get.put<Controller>(c, permanent: true))),
       GetPage(
         name: "/login",
         page: () => LoginPage(),

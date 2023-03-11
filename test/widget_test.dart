@@ -19,6 +19,24 @@ import 'package:http_mock_adapter/http_mock_adapter.dart';
 import 'package:isar/isar.dart';
 
 void main() {
+  test('a', () async {
+    final dio = Dio();
+    final dioAdapter = DioAdapter(dio: dio);
+
+    const path = 'https://example.com';
+
+    dioAdapter.onGet(
+      path,
+      (server) => server.reply(
+        200,
+        {'message': 'Success!'},
+        // Reply would wait for one-sec before returning data.
+        delay: const Duration(seconds: 1),
+      ),
+    );
+    final response = await dio.get(path);
+    print(response.data); // {message: Success!}
+  });
   test('test controller', () async {
     await Isar.initializeIsarCore(download: false);
     var db = await Isar.open([UserSchema]);
@@ -26,19 +44,26 @@ void main() {
     await c.reset();
     final dioAdapter = DioAdapter(dio: c.dio);
     var loginUrl = c.getUrl('login');
+    var now = DateTime.now().microsecondsSinceEpoch;
+    var sign = c.genSign('123456', now);
+    var data = <String, dynamic>{
+      "username": 'tomtang300',
+      'password': sign.last,
+      "timestamp": now.toString()
+    };
     dioAdapter.onPost(
-      loginUrl,
-      (server) => server.reply(
-        200,
-        {
-          'data': {'token': 'token_test'},
-          'code': 200
-        },
-        // Reply would wait for one-sec before returning data.
-        delay: const Duration(seconds: 1),
-      ),
-    );
-    expect(await c.login('tomtang300', '123456'), '');
+        loginUrl,
+        (server) => server.reply(
+              200,
+              {
+                'data': {'token': 'token_test'},
+                'code': 200
+              },
+              // Reply would wait for one-sec before returning data.
+              delay: const Duration(microseconds: 1),
+            ),
+        data: data);
+    expect(await c.doLogin('tomtang300', '123456', now), '');
   });
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // await Isar.initializeIsarCore(download: false);
