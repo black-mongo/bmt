@@ -9,7 +9,7 @@ import 'model/email.dart';
 import 'package:dio/dio.dart';
 import 'package:crypto/crypto.dart';
 
-const url = "https://xxx.net";
+const url = "https://xx.net";
 
 enum OnlineStatus { init, logined, checkPassword }
 
@@ -30,8 +30,8 @@ class Controller extends GetxController {
   var s = 0;
   var e = 0;
   var process = 0.0.obs;
-  List gesturePassPath = [];
-  var unlocked = true.obs;
+  String gesturePass = "";
+  var unlocked = false.obs;
   List bindList = [];
   increment() => counter++;
 
@@ -53,11 +53,21 @@ class Controller extends GetxController {
   }
 
   Future<void> manualInit() async {
+    if (user.value.token != null && user.value.password != null) {
+      unlocked.value = false;
+    } else {
+      unlocked.value = true;
+    }
     await _update();
   }
 
   @override
   void onInit() async {
+    if (user.value.token != null && user.value.password != null) {
+      unlocked.value = false;
+    } else {
+      unlocked.value = true;
+    }
     _update();
     Timer.periodic(const Duration(milliseconds: 1000), (timer) {
       debugPrint("timer");
@@ -74,7 +84,6 @@ class Controller extends GetxController {
       onlineStatus.value = OnlineStatus.checkPassword;
       settingRoute = "/setting";
       settingText.value = "btn_setting".tr;
-      unlocked.value = false;
       if (unlocked.value) await getbindList();
     } else if (user.value.token != null) {
       settingRoute = "/setting/code";
@@ -117,7 +126,7 @@ class Controller extends GetxController {
     Set set = genSign(password, now);
     var resp = await post(getUrl('login'),
         {"username": user, "password": set.last, "timestamp": set.first});
-    if (resp.data['code'] == 200) {
+    if (resp != null && resp.data['code'] == 200) {
       final newUser = User()
         ..id = 1
         ..name = user
@@ -127,8 +136,10 @@ class Controller extends GetxController {
       });
       _update();
       return "";
-    } else {
+    } else if (resp != null) {
       return resp.data["msg"];
+    } else {
+      return "连接网络失败";
     }
   }
 
@@ -145,6 +156,8 @@ class Controller extends GetxController {
       "request_id": DateTime.now().millisecondsSinceEpoch.toString(),
       "signature": "xxx"
     };
+    tokens.remove(bindType);
+    process.value = 0;
     var resp = await doPost(
         getUrl('token'), data, Options(headers: {'x-token': user.value.token}));
     if (resp != null && resp.data["code"] == 200) {
@@ -156,7 +169,7 @@ class Controller extends GetxController {
       var total = e - s;
       var expired = DateTime.now().millisecondsSinceEpoch / 1000 - s;
       if (total > 0) process.value = expired / total;
-      update(['i']);
+      update(['token']);
     }
   }
 
@@ -197,7 +210,7 @@ class Controller extends GetxController {
       bindList = resp.data["data"]["data"];
       update(['listview']);
       return resp.data["data"]["data"];
-    } else if (resp.data["code"] == 120) {
+    } else if (resp != null && resp.data["code"] == 120) {
       reset();
     }
     return [];
@@ -230,11 +243,19 @@ class Controller extends GetxController {
     }
   }
 
-  void unlock(List<int> passwordPath) async {
-    gesturePassPath = passwordPath;
-    if ("$passwordPath" == "[0, 1, 2, 3]") unlocked.value = true;
+  void set_unlock(bool flag) {
+    unlocked.value = flag;
     update(['i']);
-    return;
+  }
+
+  bool unlock(String password) {
+    gesturePass = password;
+    if ("1234" == password) {
+      unlocked.value = true;
+      update(['i']);
+      return true;
+    }
+    return false;
   }
 
   Set genSign(String password, int now) {

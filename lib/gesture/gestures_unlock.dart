@@ -11,11 +11,13 @@ class GesturesUnlock extends StatefulWidget {
   final String textErrorShow;
   final Color colorError;
   final String textPrepareShow;
+  final Function(String) onCheckPassword;
   const GesturesUnlock(
       {Key? key,
       this.textSuccessShow = "密码正确",
       this.textErrorShow = "密码错误,请重新输入",
       this.textPrepareShow = "请输入手势密码",
+      required this.onCheckPassword,
       this.colorError = Colors.red})
       : super(key: key);
 
@@ -117,7 +119,7 @@ class _GesturesUnlockState extends State<GesturesUnlock>
                 for (int i = 0; i < _unlockController.points.length; i++) {
                   pwd += _unlockController.points[i].num.toString();
                 }
-                if ("1234" != pwd) {
+                if (!widget.onCheckPassword(pwd)) {
                   _unlockController.color = widget.colorError;
                   Timer(const Duration(milliseconds: 500), () {
                     _unlockController.clearAllPoint();
@@ -134,7 +136,6 @@ class _GesturesUnlockState extends State<GesturesUnlock>
                   setState(() {
                     textColor = Colors.black87;
                     text = widget.textSuccessShow;
-                    Get.toNamed("/login");
                   });
                 }
               },

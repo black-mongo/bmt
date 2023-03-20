@@ -5,7 +5,9 @@ class Messages extends Translations {
   // TODO: implement keys
   Map<String, Map<String, String>> get keys => {
         "zh_CN": {
-          "title": "黑芒令牌",
+          "text_title": "黑芒令牌",
+          "text_copyright": "Black-Mongo © 2023",
+          "text_scan_tip": "扫描二维码",
           "btn_change_theme": "修改主题",
           "btn_change_lang": "修改语言",
           "btn_login": "登陆",
@@ -16,7 +18,9 @@ class Messages extends Translations {
           "hint_text_code": "你的验证码"
         },
         'en': {
-          "title": "BmToken",
+          "text_title": "BmToken",
+          "text_scan_tip": "Scan Qrcode",
+          "text_copyright": "Black-Mongo © 2023",
           "btn_change_theme": "Change Theme",
           "btn_change_lang": "Change language",
           "btn_login": "Login",

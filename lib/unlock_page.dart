@@ -14,7 +14,13 @@ class UnlockPage extends StatelessWidget {
     return GetBuilder<Controller>(
         id: 'gesture',
         builder: (_) => Column(
-              children: [GesturesUnlock()],
+              children: [
+                GesturesUnlock(
+                  onCheckPassword: (p) {
+                    return c.unlock(p);
+                  },
+                )
+              ],
             ));
   }
 }

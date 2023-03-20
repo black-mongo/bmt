@@ -1,8 +1,12 @@
 import 'package:bmt/gesture/gestures_unlock.dart';
+import 'package:bmt/scanner_page.dart';
+import 'package:bmt/token_page.dart';
 import 'package:bmt/unlock_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:bmt/controller.dart';
+
+import 'loading.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -13,16 +17,24 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> with WidgetsBindingObserver {
-  var selected = -1;
   final Controller c = Get.find();
+  GlobalKey<ScaffoldState> _globalKey = GlobalKey();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this); //添加观察者
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final Controller c = Get.find();
     // TODO: implement didChangeAppLifecycleState
     super.didChangeAppLifecycleState(state);
     switch (state) {
       //进入应用时候不会触发该状态 应用程序处于可见状态，并且可以响应用户的输入事件。它相当于 Android 中Activity的onResume
       case AppLifecycleState.resumed:
         print("应用进入前台======");
+        c.set_unlock(false);
         break;
       //应用状态处于闲置状态，并且没有用户的输入事件，
       // 注意：这个状态切换到 前后台 会触发，所以流程应该是先冻结窗口，然后停止UI
@@ -43,12 +55,26 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _globalKey,
       appBar: AppBar(
-          leading: ElevatedButton(
-            child: const Icon(Icons.menu),
-            onPressed: () => null,
+        leading: ElevatedButton(
+          child: const Icon(Icons.menu),
+          onPressed: () {
+            _globalKey.currentState?.openDrawer();
+          },
+        ),
+        title: Text('text_title'.tr),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'text_scan_tip'.tr,
+            onPressed: () {
+              Get.toNamed("/scanner");
+            },
           ),
-          title: Text('text_title'.tr)),
+        ],
+      ),
+      drawer: draw(),
       body: SafeArea(
           child: GetBuilder<Controller>(id: 'i', builder: (_) => bindList())),
       floatingActionButton: FloatingActionButton(
@@ -61,43 +87,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   Widget bindList() {
     final Controller c = Get.find();
     if (c.unlocked.value == true) {
-      return Column(children: [
-        Expanded(
-            child: GetBuilder<Controller>(
-                id: 'listview',
-                builder: (_) => ListView.builder(
-                    key: Key('builder ${selected.toString()}'), //attention
-                    itemCount: c.bindList.length,
-                    itemBuilder: (context, index) {
-                      return ExpansionTile(
-                        key: Key(index.toString()),
-                        leading: const Icon(Icons.security),
-                        title: Text('${c.bindList[index]["bind_name"]}'),
-                        initiallyExpanded: selected == index,
-                        trailing: const Icon(Icons.expand_more),
-                        children: <Widget>[
-                          ListTile(
-                              title: Obx(() => Text(
-                                  '${c.tokens[c.bindList[index]["bind_type"]]}'))),
-                          Obx(() => LinearProgressIndicator(
-                                backgroundColor: Colors.grey[200],
-                                valueColor:
-                                    const AlwaysStoppedAnimation(Colors.green),
-                                value: c.process.value,
-                              ))
-                        ],
-                        onExpansionChanged: (bool expanded) {
-                          if (expanded) {
-                            c.select(c.bindList[index]["bind_type"],
-                                c.bindList[index]["teamc_id"]);
-                            selected = index;
-                          } else {
-                            selected = -1;
-                          }
-                        },
-                      );
-                    })))
-      ]);
+      return const TokenPage();
     } else {
       return UnlockPage();
     }
@@ -154,4 +144,34 @@ class Setting extends StatelessWidget {
       );
     }
   }
+}
+
+Drawer draw() {
+  return Drawer(
+      width: 80,
+      child: Column(
+        children: <Widget>[
+          // DrawerHeader(
+          //   decoration: BoxDecoration(
+          //       color: Colors.yellow,
+          //       image: DecorationImage(
+          //           image:
+          //               NetworkImage("https://www.itying.com/images/flutter/2.png"),
+          //           fit: BoxFit.cover)),
+          //   child: ListView(
+          //     children: <Widget>[Text('我是一个头部')],
+          //   ),
+          // ),
+          Divider(),
+          ListTile(
+            // title: Text("个人中心"),
+            leading: CircleAvatar(child: Icon(Icons.people)),
+          ),
+          Divider(),
+          ListTile(
+            // title: Text("系统设置"),
+            leading: CircleAvatar(child: Icon(Icons.settings)),
+          )
+        ],
+      ));
 }
