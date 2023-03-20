@@ -1,6 +1,9 @@
+import 'package:bmt/about_page.dart';
+import 'package:bmt/code_page.dart';
 import 'package:bmt/gesture/gestures_unlock.dart';
 import 'package:bmt/login_page.dart';
 import 'package:bmt/scanner_page.dart';
+import 'package:bmt/setting_page.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -36,7 +39,9 @@ GetMaterialApp app(Controller c) {
         name: "/login",
         page: () => LoginPage(),
       ),
-      GetPage(name: "/setting/:type", page: () => Setting()),
+      GetPage(name: "/setting", page: () => SettingPage()),
+      GetPage(name: "/code", page: () => CodePage()),
+      GetPage(name: "/about", page: () => const AboutPage()),
       GetPage(name: "/scanner", page: () => const ScannerPage())
     ],
   );

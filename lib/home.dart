@@ -1,5 +1,6 @@
 import 'package:bmt/gesture/gestures_unlock.dart';
 import 'package:bmt/scanner_page.dart';
+import 'package:bmt/side_page.dart';
 import 'package:bmt/token_page.dart';
 import 'package:bmt/unlock_page.dart';
 import 'package:flutter/material.dart';
@@ -74,13 +75,9 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
           ),
         ],
       ),
-      drawer: draw(),
+      drawer: SidePage(),
       body: SafeArea(
           child: GetBuilder<Controller>(id: 'i', builder: (_) => bindList())),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.toNamed(c.settingRoute),
-        child: Obx(() => Text(c.settingText.value)),
-      ),
     );
   }
 
@@ -92,86 +89,4 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       return UnlockPage();
     }
   }
-}
-
-// ignore: use_key_in_widget_constructors
-class Setting extends StatelessWidget {
-  final Controller c = Get.find();
-  final String? type = Get.parameters["type"];
-  void checkCode() async {
-    if (await c.checkSecondPassword("1234") == "") {
-      Get.offNamed('/');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (type == "code") {
-      return Scaffold(
-          appBar: AppBar(title: Text("title".tr)),
-          body: Center(
-            child: Column(children: <Widget>[
-              TextField(
-                decoration: InputDecoration(
-                    labelText: "text_code".tr,
-                    hintText: "hint_text_code".tr,
-                    prefixIcon: Icon(Icons.lock)),
-                obscureText: true,
-              ),
-              TextButton(onPressed: () => checkCode(), child: Text("确定"))
-            ]),
-          ));
-    } else {
-      return Scaffold(
-        appBar: AppBar(title: Text("hello".tr)),
-        body: Center(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                Text("${c.counter}"),
-                TextButton(
-                    onPressed: () => {c.chgTheme()},
-                    child: Text("btn_change_theme".tr)),
-                TextButton(
-                    onPressed: () => {c.chgLang()},
-                    child: Text("btn_change_lang".tr))
-              ]),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => Get.toNamed("/home"),
-          child: const Icon(Icons.add),
-        ),
-      );
-    }
-  }
-}
-
-Drawer draw() {
-  return Drawer(
-      width: 80,
-      child: Column(
-        children: <Widget>[
-          // DrawerHeader(
-          //   decoration: BoxDecoration(
-          //       color: Colors.yellow,
-          //       image: DecorationImage(
-          //           image:
-          //               NetworkImage("https://www.itying.com/images/flutter/2.png"),
-          //           fit: BoxFit.cover)),
-          //   child: ListView(
-          //     children: <Widget>[Text('我是一个头部')],
-          //   ),
-          // ),
-          Divider(),
-          ListTile(
-            // title: Text("个人中心"),
-            leading: CircleAvatar(child: Icon(Icons.people)),
-          ),
-          Divider(),
-          ListTile(
-            // title: Text("系统设置"),
-            leading: CircleAvatar(child: Icon(Icons.settings)),
-          )
-        ],
-      ));
 }

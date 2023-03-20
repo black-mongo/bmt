@@ -15,7 +15,9 @@ class Messages extends Translations {
           "btn_setting_code": "设置验证码",
           "text_login": "登陆页面",
           "text_code": "验证码",
-          "hint_text_code": "你的验证码"
+          "hint_text_code": "你的验证码",
+          "btn_code_click": "确定",
+          "text_about": "黑芒令牌出品，侵权必究"
         },
         'en': {
           "text_title": "BmToken",
@@ -28,7 +30,10 @@ class Messages extends Translations {
           "btn_setting_code": "Setting code",
           "text_login": "Login Page",
           "text_code": "Verify code",
-          "hint_text_code": "Your Verify code"
+          "hint_text_code": "Your Verify code",
+          "btn_code_click": "OK",
+          "text_about":
+              "Black Mongo token production\ninfringement must be investigated"
         }
       };
 }
