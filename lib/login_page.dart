@@ -2,23 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'controller.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
 
-const users = const {
-  'admin@gmail.com': '12345',
-  'hunter@gmail.com': 'hunter',
-};
-
 class LoginPage extends StatelessWidget {
-  Duration get loginTime => Duration(milliseconds: 2250);
+  LoginPage({super.key});
 
+  Duration get loginTime => const Duration(milliseconds: 2250);
+  final Controller c = Get.find();
   Future<String?> _authUser(LoginData data) {
     debugPrint('Name: ${data.name}, Password: ${data.password}');
     // return Future.delayed(loginTime).then((_) {
     //   return null;
     // });
-    final Controller c = Get.find();
     return c.login(data.name, data.password);
   }
 
@@ -27,16 +22,12 @@ class LoginPage extends StatelessWidget {
     // return Future.delayed(loginTime).then((_) {
     //   return null;
     // });
-    final Controller c = Get.find();
     return c.login(data.name!, data.password!);
   }
 
   Future<String> _recoverPassword(String name) {
     debugPrint('Name: $name');
     return Future.delayed(loginTime).then((_) {
-      if (!users.containsKey(name)) {
-        return 'User not exists';
-      }
       return "";
     });
   }
@@ -50,9 +41,20 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (c.onlineStatus.value != OnlineStatus.init) {
+      return Center(
+        child: ElevatedButton(
+          child: Text("btn_logout".tr),
+          onPressed: () async {
+            await c.logout();
+            Get.offNamed("/");
+          },
+        ),
+      );
+    }
     return FlutterLogin(
-      title: 'titel'.tr,
-      logo: const AssetImage('assets/images/logo.png'),
+      title: 'text_titel'.tr,
+      // logo: const AssetImage('assets/images/logo.png'),
       onLogin: _authUser,
       onSignup: _signupUser,
       onSubmitAnimationCompleted: () => Get.offNamed("/"),

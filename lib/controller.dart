@@ -9,7 +9,7 @@ import 'model/email.dart';
 import 'package:dio/dio.dart';
 import 'package:crypto/crypto.dart';
 
-const url = "https://xx.net";
+const url = "https://xxx.net";
 
 enum OnlineStatus { init, logined, checkPassword }
 
@@ -22,8 +22,6 @@ class Controller extends GetxController {
   final Dio dio;
   // ignore: prefer_typing_uninitialized_variables
   final Isar isar;
-  var settingRoute = "/login";
-  var settingText = "btn_login".tr.obs;
   var tokens = {}.obs;
   var bindType = "".obs;
   var teamcid = "";
@@ -39,16 +37,24 @@ class Controller extends GetxController {
     dio.httpClientAdapter = dioAdapter;
   }
 
+  Future<void> logout() async {
+    await reset();
+    update(['i']);
+  }
+
   Future<void> reset() async {
     // 删除数据
     await isar.writeTxn(() async {
-      await isar.users.delete(1);
+      if (!await isar.users.delete(1)) {
+        debugPrint("delete row error");
+        return;
+      }
     });
-    settingRoute = "/login";
-    settingText.value = "btn_login".tr;
     user.value.token = null;
     user.value.name = null;
     user.value.password = null;
+    onlineStatus.value = OnlineStatus.init;
+    bindList = [];
     _update();
   }
 
@@ -70,7 +76,6 @@ class Controller extends GetxController {
     }
     _update();
     Timer.periodic(const Duration(milliseconds: 1000), (timer) {
-      debugPrint("timer");
       _changeProcess();
 
       ///定时任务
@@ -82,13 +87,8 @@ class Controller extends GetxController {
     await getUser();
     if (user.value.token != null && user.value.password != null) {
       onlineStatus.value = OnlineStatus.checkPassword;
-      settingRoute = "/setting";
-      settingText.value = "btn_setting".tr;
       if (unlocked.value) await getbindList();
-    } else if (user.value.token != null) {
-      settingRoute = "/setting/code";
-      settingText.value = "btn_setting_code".tr;
-    }
+    } else if (user.value.token != null) {}
   }
 
   void chgLang() {
@@ -102,7 +102,6 @@ class Controller extends GetxController {
   }
 
   void chgTheme() async {
-    await Future.delayed(const Duration(seconds: 3));
     Get.changeTheme(Get.isDarkMode ? ThemeData.light() : ThemeData.dark());
   }
 
@@ -158,8 +157,8 @@ class Controller extends GetxController {
     };
     tokens.remove(bindType);
     process.value = 0;
-    var resp = await doPost(
-        getUrl('token'), data, Options(headers: {'x-token': user.value.token}));
+    var resp = await doPost(getUrl('token'), data,
+        options: Options(headers: {'x-token': _token()}));
     if (resp != null && resp.data["code"] == 200) {
       this.bindType.value = bindType;
       teamcid = teamcId;
@@ -180,6 +179,10 @@ class Controller extends GetxController {
     if (process.value > 1) {
       select(bindType.value, teamcid);
     }
+  }
+
+  String _token() {
+    return user.value.token ?? "";
   }
 
   String getUrl(String name) {
@@ -266,20 +269,21 @@ class Controller extends GetxController {
   }
 
   Future<dynamic> post(String path, Object? data) async {
-    return doPost(path, data, null);
+    return doPost(path, data);
   }
 
   Future<dynamic> doPost(
     String path,
-    Object? data,
+    Object? data, {
     Options? options,
-  ) async {
+  }) async {
     try {
-      var res = await dio.post(path, data: data);
-      debugPrint('path = $path,data=$data,resp=$res');
+      var res = await dio.post(path, data: data, options: options);
+      debugPrint(
+          'path = $path,data=$data,options=${options?.headers}, resp=$res');
       return res;
     } catch (e) {
-      debugPrint("$e");
+      debugPrint("post error = $e");
       return Future(() => null);
     }
   }
