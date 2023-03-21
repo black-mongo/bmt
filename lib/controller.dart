@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:bmt/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:isar/isar.dart';
@@ -118,7 +119,7 @@ class Controller extends GetxController {
   ///
   ///
   Future<String> login(String user, String password) async {
-    return doLogin(user, password, DateTime.now().millisecondsSinceEpoch);
+    return doLogin(user, password, Utils.epoch());
   }
 
   Future<String> doLogin(String user, String password, int now) async {
@@ -144,15 +145,15 @@ class Controller extends GetxController {
 
   void select(String bindType, String teamcId) async {
     var data = {
-      "request_id": DateTime.now().millisecondsSinceEpoch.toString(),
-      "timestamp": DateTime.now().millisecondsSinceEpoch.toString(),
+      "request_id": Utils.epoch().toString(),
+      "timestamp": Utils.epoch().toString(),
       "data": {
         "teamc_id": teamcId,
         "bind_type": bindType,
         "pw_length": "6",
         "period": "30"
       },
-      "request_id": DateTime.now().millisecondsSinceEpoch.toString(),
+      "request_id": Utils.epoch().toString(),
       "signature": "xxx"
     };
     tokens.remove(bindType);
@@ -166,7 +167,7 @@ class Controller extends GetxController {
       s = resp.data["data"]["data"]["start_time"];
       e = resp.data["data"]["data"]["end_time"];
       var total = e - s;
-      var expired = DateTime.now().millisecondsSinceEpoch / 1000 - s;
+      var expired = Utils.seconds() - s;
       if (total > 0) process.value = expired / total;
       update(['token']);
     }
@@ -174,7 +175,7 @@ class Controller extends GetxController {
 
   void _changeProcess() {
     var total = e - s;
-    var expired = DateTime.now().millisecondsSinceEpoch / 1000 - s;
+    var expired = Utils.seconds() - s;
     if (total > 0) process.value = expired / total;
     if (process.value > 1) {
       select(bindType.value, teamcid);
@@ -199,15 +200,14 @@ class Controller extends GetxController {
   /// 获取绑定列表
   ///
   Future<List> getbindList() async {
-    Set set =
-        genSign(user.value.password!, DateTime.now().millisecondsSinceEpoch);
+    Set set = genSign(user.value.password!, Utils.epoch());
     debugPrint("pasword = ${user.value.password}");
     var resp = await post(getUrl('list'), {
       "token": user.value.token,
       "password": set.last,
       "timestamp": set.first.toString(),
       "data": "",
-      "request_id": DateTime.now().microsecondsSinceEpoch.toString()
+      "request_id": Utils.epoch().toString()
     });
     if (resp != null && resp.data["code"] == 200) {
       bindList = resp.data["data"]["data"];
@@ -223,7 +223,7 @@ class Controller extends GetxController {
   /// 验证2次密码
   ///
   Future<String> checkSecondPassword(String password) async {
-    Set set = genSign(password, DateTime.now().microsecondsSinceEpoch);
+    Set set = genSign(password, Utils.epoch());
     var resp = await post(getUrl('code'), {
       "token": user.value.token,
       "password": set.last,
