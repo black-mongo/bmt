@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:bmt/model/secret.dart';
 import 'package:bmt/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -24,8 +25,8 @@ class Controller extends GetxController {
   // ignore: prefer_typing_uninitialized_variables
   final Isar isar;
   var tokens = {}.obs;
-  var bindType = "".obs;
-  var teamcid = "";
+  var selectedType = "".obs;
+  var selectedName = "".obs;
   var s = 0;
   var e = 0;
   var process = 0.0.obs;
@@ -46,7 +47,11 @@ class Controller extends GetxController {
   Future<void> reset() async {
     // 删除数据
     await isar.writeTxn(() async {
-      if (!await isar.users.delete(1)) {
+      await isar.secrets
+          .filter()
+          .uidContains(user.value.id.toString())
+          .deleteAll();
+      if (!await isar.users.delete(user.value.id)) {
         debugPrint("delete row error");
         return;
       }
@@ -143,34 +148,48 @@ class Controller extends GetxController {
     }
   }
 
-  void select(String bindType, String teamcId) async {
+  void select(String name, String type) async {
+    assert(name != "");
+    selectedName.value = name;
+    selectedType.value = type;
+    final secret = await isar.secrets.getByName(name);
+    if (secret != null) {
+      final token = Utils.calcOtp(secret.secret);
+      _doSelect(name, token, Utils.seconds(), Utils.seconds() + 30);
+      return;
+    }
     var data = {
       "request_id": Utils.epoch().toString(),
       "timestamp": Utils.epoch().toString(),
       "data": {
-        "teamc_id": teamcId,
-        "bind_type": bindType,
+        "teamc_id": user.value.name,
+        "bind_type": type,
         "pw_length": "6",
         "period": "30"
       },
       "request_id": Utils.epoch().toString(),
       "signature": "xxx"
     };
-    tokens.remove(bindType);
+    tokens.remove(name);
     process.value = 0;
     var resp = await doPost(getUrl('token'), data,
         options: Options(headers: {'x-token': _token()}));
     if (resp != null && resp.data["code"] == 200) {
-      this.bindType.value = bindType;
-      teamcid = teamcId;
-      tokens.addEntries({bindType: resp.data["data"]["data"]["token"]}.entries);
+      final token = resp.data["data"]["data"]["token"];
       s = resp.data["data"]["data"]["start_time"];
       e = resp.data["data"]["data"]["end_time"];
-      var total = e - s;
-      var expired = Utils.seconds() - s;
-      if (total > 0) process.value = expired / total;
-      update(['token']);
+      _doSelect(name, token, s, e);
     }
+  }
+
+  void _doSelect(String name, String token, int s, int e) {
+    this.s = s;
+    this.e = e;
+    tokens.addEntries({name: token}.entries);
+    var total = e - s;
+    var expired = Utils.seconds() - s;
+    if (total > 0) process.value = expired / total;
+    update(['token']);
   }
 
   void _changeProcess() {
@@ -178,7 +197,7 @@ class Controller extends GetxController {
     var expired = Utils.seconds() - s;
     if (total > 0) process.value = expired / total;
     if (process.value > 1) {
-      select(bindType.value, teamcid);
+      select(selectedName.value, selectedType.value);
     }
   }
 
@@ -199,7 +218,8 @@ class Controller extends GetxController {
   ///
   /// 获取绑定列表
   ///
-  Future<List> getbindList() async {
+  Future<void> getbindList() async {
+    await writeSecrets("google", Utils.type.otp, "kkjdg");
     Set set = genSign(user.value.password!, Utils.epoch());
     debugPrint("pasword = ${user.value.password}");
     var resp = await post(getUrl('list'), {
@@ -210,13 +230,26 @@ class Controller extends GetxController {
       "request_id": Utils.epoch().toString()
     });
     if (resp != null && resp.data["code"] == 200) {
-      bindList = resp.data["data"]["data"];
+      bindList = _bindListtoSecrets(resp.data["data"]["data"]);
       update(['listview']);
-      return resp.data["data"]["data"];
     } else if (resp != null && resp.data["code"] == 120) {
       reset();
     }
-    return [];
+    final secrets = await fetchSecrets();
+    if (secrets.isNotEmpty) bindList.insertAll(bindList.length, secrets);
+    return;
+  }
+
+  List<Secret> _bindListtoSecrets(List<dynamic> resp) {
+    List<Secret> res = [];
+    for (int i = 0; i < resp.length; i++) {
+      final row = resp[i];
+      Secret s = Secret();
+      s.name = row["bind_name"];
+      s.type = row["bind_type"];
+      res.insert(i, s);
+    }
+    return res;
   }
 
   ///
@@ -286,5 +319,22 @@ class Controller extends GetxController {
       debugPrint("post error = $e");
       return Future(() => null);
     }
+  }
+
+  Future<bool> writeSecrets(String name, String type, String secret) async {
+    // write secret to table
+    await isar.writeTxn(() async {
+      var s = Secret();
+      s.name = name;
+      s.secret = secret;
+      s.type = type;
+      s.uid = user.value.id.toString();
+      await isar.secrets.put(s);
+    });
+    return true;
+  }
+
+  Future<List<Secret>> fetchSecrets() async {
+    return await isar.secrets.where().findAll(); // get
   }
 }

@@ -1,9 +1,10 @@
 import 'package:otp/otp.dart';
 
 class Utils {
+  static final type = Type();
   static int seconds() {
     int e = epoch();
-    return e - e % 1000;
+    return e ~/ 1000;
   }
 
   static int epoch() {
@@ -14,4 +15,8 @@ class Utils {
     return OTP.generateTOTPCodeString(secret, epoch(),
         interval: interval, length: digits);
   }
+}
+
+class Type {
+  String otp = "otp";
 }

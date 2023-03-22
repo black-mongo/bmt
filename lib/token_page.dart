@@ -33,13 +33,12 @@ class TokenPageState extends State<TokenPage> {
                           return ExpansionTile(
                             key: Key(index.toString()),
                             leading: const Icon(Icons.security),
-                            title: Text('${c.bindList[index]["bind_name"]}'),
+                            title: Text('${c.bindList[index].name}'),
                             initiallyExpanded: selected == index,
                             trailing: const Icon(Icons.expand_more),
                             children: <Widget>[
                               ListTile(title: Obx(() {
-                                var token =
-                                    c.tokens[c.bindList[index]["bind_type"]];
+                                var token = c.tokens[c.bindList[index].name];
                                 return token == null
                                     ? const Loading()
                                     : Center(child: Text('${token}'));
@@ -54,8 +53,8 @@ class TokenPageState extends State<TokenPage> {
                             onExpansionChanged: (bool expanded) {
                               if (expanded) {
                                 selected = index;
-                                c.select(c.bindList[index]["bind_type"],
-                                    c.bindList[index]["teamc_id"]);
+                                c.select(c.bindList[index].name,
+                                    c.bindList[index].type);
                               } else {
                                 selected = -1;
                               }

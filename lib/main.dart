@@ -14,9 +14,10 @@ import 'package:isar/isar.dart';
 import 'dart:ui' as ui;
 import 'home.dart';
 import 'model/email.dart';
+import 'model/secret.dart';
 
 void main() async {
-  var db = await Isar.open([UserSchema]);
+  var db = await Isar.open([UserSchema, SecretSchema]);
   Controller c = Controller(Dio(), db);
   await c.manualInit();
   runApp(app(c));
