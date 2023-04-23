@@ -7,11 +7,12 @@ import 'package:bmt/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:isar/isar.dart';
+import 'package:otp/otp.dart';
 import 'model/email.dart';
 import 'package:dio/dio.dart';
 import 'package:crypto/crypto.dart';
 
-const url = "https://xxx.net";
+const url = "xxx";
 
 enum OnlineStatus { init, logined, checkPassword }
 
@@ -150,12 +151,17 @@ class Controller extends GetxController {
 
   void select(String name, String type) async {
     assert(name != "");
+    final oldSelectedName = selectedName.value;
     selectedName.value = name;
     selectedType.value = type;
     final secret = await isar.secrets.getByName(name);
     if (secret != null) {
-      final token = Utils.calcOtp(secret.secret);
-      _doSelect(name, token, Utils.seconds(), Utils.seconds() + 30);
+      if (oldSelectedName != name ||
+          oldSelectedName == name && Utils.seconds() > e) {
+        final token = Utils.calcOtp(secret.secret);
+        _doSelect(name, token, OTP.lastUsedTime ~/ 1000,
+            OTP.lastUsedTime ~/ 1000 + 30);
+      }
       return;
     }
     var data = {
@@ -219,7 +225,6 @@ class Controller extends GetxController {
   /// 获取绑定列表
   ///
   Future<void> getbindList() async {
-    await writeSecrets("google", Utils.type.otp, "kkjdg");
     Set set = genSign(user.value.password!, Utils.epoch());
     debugPrint("pasword = ${user.value.password}");
     var resp = await post(getUrl('list'), {
@@ -236,6 +241,7 @@ class Controller extends GetxController {
       reset();
     }
     final secrets = await fetchSecrets();
+    debugPrint("secrets = $secrets");
     if (secrets.isNotEmpty) bindList.insertAll(bindList.length, secrets);
     return;
   }
@@ -256,27 +262,32 @@ class Controller extends GetxController {
   /// 验证2次密码
   ///
   Future<String> checkSecondPassword(String password) async {
-    Set set = genSign(password, Utils.epoch());
-    var resp = await post(getUrl('code'), {
-      "token": user.value.token,
-      "password": set.last,
-      "timestamp": set.first
+    user.value.password = password;
+    await isar.writeTxn(() async {
+      await isar.users.put(user.value);
     });
-    if (resp != null && resp.data["code"] == 200) {
-      user.value.password = password;
-      await isar.writeTxn(() async {
-        await isar.users.put(user.value);
-      });
-      _update();
-      return "";
-    } else if (resp != null && resp.data["code"] == 120) {
-      reset();
-      return resp.data["msg"];
-    } else if (resp != null) {
-      return resp.data["msg"];
-    } else {
-      return "请求返回错误";
-    }
+    return "";
+    // Set set = genSign(password, Utils.epoch());
+    // var resp = await post(getUrl('code'), {
+    //   "token": user.value.token,
+    //   "password": set.last,
+    //   "timestamp": set.first
+    // });
+    // if (resp != null && resp.data["code"] == 200) {
+    //   user.value.password = password;
+    //   await isar.writeTxn(() async {
+    //     await isar.users.put(user.value);
+    //   });
+    //   _update();
+    //   return "";
+    // } else if (resp != null && resp.data["code"] == 120) {
+    //   reset();
+    //   return resp.data["msg"];
+    // } else if (resp != null) {
+    //   return resp.data["msg"];
+    // } else {
+    //   return "请求返回错误";
+    // }
   }
 
   void set_unlock(bool flag) {
@@ -319,6 +330,25 @@ class Controller extends GetxController {
       debugPrint("post error = $e");
       return Future(() => null);
     }
+  }
+
+  Future<bool> newSecrets(String qrcode) async {
+    final otpAuth = Utils.parseOtpAuth(qrcode);
+    debugPrint("otpAuth = ${otpAuth.name} ${otpAuth.secret}");
+    await writeSecrets(otpAuth.name!, "otp", otpAuth.secret!);
+    await getbindList();
+    update(['listview']);
+    return true;
+  }
+
+  Future<void> deleteBindList(Map deleteL) async {
+    deleteL.forEach((key, value) async {
+      await isar.writeTxn(() async {
+        await isar.secrets.deleteByName(key);
+      });
+    });
+    await getbindList();
+    update(['listview']);
   }
 
   Future<bool> writeSecrets(String name, String type, String secret) async {

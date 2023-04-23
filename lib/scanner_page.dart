@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:get/get.dart';
+
+import 'controller.dart';
 
 class ScannerPage extends StatelessWidget {
   const ScannerPage({Key? key}) : super(key: key);
@@ -11,7 +14,7 @@ class ScannerPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Flutter Demo Home Page')),
+      appBar: AppBar(title: Text('text_title'.tr)),
       body: Center(
         child: ElevatedButton(
           onPressed: () {
@@ -81,6 +84,7 @@ class _QRViewExampleState extends State<QRViewExample> {
                             child: FutureBuilder(
                               future: controller?.getFlashStatus(),
                               builder: (context, snapshot) {
+                                // 手电筒
                                 return Text('Flash: ${snapshot.data}');
                               },
                             )),
@@ -96,6 +100,7 @@ class _QRViewExampleState extends State<QRViewExample> {
                               future: controller?.getCameraInfo(),
                               builder: (context, snapshot) {
                                 if (snapshot.data != null) {
+                                  // 摄像头反转
                                   return Text(
                                       'Camera facing ${describeEnum(snapshot.data!)}');
                                 } else {
@@ -116,6 +121,7 @@ class _QRViewExampleState extends State<QRViewExample> {
                           onPressed: () async {
                             await controller?.pauseCamera();
                           },
+                          // 摄像头页面静止
                           child: const Text('pause',
                               style: TextStyle(fontSize: 20)),
                         ),
@@ -126,6 +132,7 @@ class _QRViewExampleState extends State<QRViewExample> {
                           onPressed: () async {
                             await controller?.resumeCamera();
                           },
+                          // 摄像头页面重置
                           child: const Text('resume',
                               style: TextStyle(fontSize: 20)),
                         ),
@@ -168,7 +175,10 @@ class _QRViewExampleState extends State<QRViewExample> {
     });
     controller.scannedDataStream.listen((scanData) {
       setState(() {
+        Controller c = Get.find();
         result = scanData;
+        c.newSecrets(result!.code!);
+        Get.offNamed("/");
       });
     });
   }

@@ -75,7 +75,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
           ),
         ],
       ),
-      drawer: SidePage(),
+      drawer: SidePage(), // left side page
       body: SafeArea(
           child: GetBuilder<Controller>(id: 'i', builder: (_) => bindList())),
     );
@@ -86,6 +86,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     if (c.unlocked.value == true) {
       return const TokenPage();
     } else {
+      // gesture to unlock page
       return UnlockPage();
     }
   }
