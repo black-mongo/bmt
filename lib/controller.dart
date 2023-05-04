@@ -12,7 +12,7 @@ import 'model/email.dart';
 import 'package:dio/dio.dart';
 import 'package:crypto/crypto.dart';
 
-const url = "xxx";
+const url = "https://api.github.com/gists/b493a37077592b3eb9b09852c21bc7fa";
 
 enum OnlineStatus { init, logined, checkPassword }
 
@@ -21,6 +21,7 @@ class Controller extends GetxController {
   var counter = 0.obs;
   var lang = 'zh'.obs;
   var user = User().obs;
+  var _url = "";
   var onlineStatus = OnlineStatus.init.obs;
   final Dio dio;
   // ignore: prefer_typing_uninitialized_variables
@@ -130,7 +131,7 @@ class Controller extends GetxController {
 
   Future<String> doLogin(String user, String password, int now) async {
     Set set = genSign(password, now);
-    var resp = await post(getUrl('login'),
+    var resp = await post(await getUrl('login'),
         {"username": user, "password": set.last, "timestamp": set.first});
     if (resp != null && resp.data['code'] == 200) {
       final newUser = User()
@@ -178,7 +179,7 @@ class Controller extends GetxController {
     };
     tokens.remove(name);
     process.value = 0;
-    var resp = await doPost(getUrl('token'), data,
+    var resp = await doPost(await getUrl('token'), data,
         options: Options(headers: {'x-token': _token()}));
     if (resp != null && resp.data["code"] == 200) {
       final token = resp.data["data"]["data"]["token"];
@@ -211,14 +212,25 @@ class Controller extends GetxController {
     return user.value.token ?? "";
   }
 
-  String getUrl(String name) {
+  Future<String> getUrl(String name) async {
     var urls = {
       "login": '/tokenapi/app/login',
       "code": "/tokenapi/2f",
       "list": "/get_secure_crt/user_bind_list",
       "token": "/get_secure_crt/get_token"
     };
-    return '$url${urls[name]}';
+    var hosts = await fetchHosts();
+    if (hosts.isNotEmpty) {
+      _url = hosts[0];
+      return '${hosts[0]}${urls[name]}';
+    } else {
+      if (_url.isNotEmpty) {
+        return _url;
+      } else {
+        _url = "https://xxx.example.com";
+        return _url;
+      }
+    }
   }
 
   ///
@@ -227,7 +239,7 @@ class Controller extends GetxController {
   Future<void> getbindList() async {
     Set set = genSign(user.value.password!, Utils.epoch());
     debugPrint("pasword = ${user.value.password}");
-    var resp = await post(getUrl('list'), {
+    var resp = await post(await getUrl('list'), {
       "token": user.value.token,
       "password": set.last,
       "timestamp": set.first.toString(),
@@ -266,6 +278,8 @@ class Controller extends GetxController {
     await isar.writeTxn(() async {
       await isar.users.put(user.value);
     });
+    await getbindList();
+    update(["listview"]);
     return "";
     // Set set = genSign(password, Utils.epoch());
     // var resp = await post(getUrl('code'), {
@@ -366,5 +380,17 @@ class Controller extends GetxController {
 
   Future<List<Secret>> fetchSecrets() async {
     return await isar.secrets.where().findAll(); // get
+  }
+
+  Future<List> fetchHosts() async {
+    try {
+      var res = await dio.get(url);
+      var content = res.data["files"]["host.txt"]["content"];
+      var hosts = jsonDecode(content);
+      debugPrint("content = $hosts");
+      return Future(() => hosts);
+    } catch (e) {
+      return Future(() => []);
+    }
   }
 }

@@ -7,10 +7,12 @@ import 'controller.dart';
 class CodePage extends StatelessWidget {
   final Controller c = Get.find();
   final String? type = Get.parameters["type"];
+  String password = "";
 
   CodePage({super.key});
   void checkCode() async {
-    if (await c.checkSecondPassword("1234") == "") {
+    debugPrint("set password = $password");
+    if (await c.checkSecondPassword(password) == "") {
       Get.offNamed('/');
     }
   }
@@ -27,6 +29,7 @@ class CodePage extends StatelessWidget {
                   hintText: "hint_text_code".tr,
                   prefixIcon: Icon(Icons.lock)),
               obscureText: true,
+              onChanged: (value) => password = value,
             ),
             TextButton(
                 onPressed: () => checkCode(), child: Text("btn_code_click".tr))
