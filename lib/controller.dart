@@ -219,17 +219,16 @@ class Controller extends GetxController {
       "list": "/get_secure_crt/user_bind_list",
       "token": "/get_secure_crt/get_token"
     };
-    var hosts = await fetchHosts();
-    if (hosts.isNotEmpty) {
-      _url = hosts[0];
-      return '${hosts[0]}${urls[name]}';
-    } else {
-      if (_url.isNotEmpty) {
-        return _url;
+    if (!_url.isNotEmpty) {
+      var hosts = await fetchHosts();
+      if (hosts.isNotEmpty) {
+        _url = hosts[0];
+        return '${hosts[0]}${urls[name]}';
       } else {
-        _url = "https://xxx.example.com";
-        return _url;
+        return "https://xxxx.net${urls[name]}";
       }
+    } else {
+      return '$_url${urls[name]}';
     }
   }
 
@@ -390,6 +389,7 @@ class Controller extends GetxController {
       debugPrint("content = $hosts");
       return Future(() => hosts);
     } catch (e) {
+      debugPrint("fetchHosts error = $e");
       return Future(() => []);
     }
   }
