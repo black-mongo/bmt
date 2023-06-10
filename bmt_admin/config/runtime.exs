@@ -63,6 +63,10 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+   config :bmt_admin, :github,
+    client_id: System.fetch_env!("BMT_ADMIN_GITHUB_CLIENT_ID"),
+    client_secret: System.fetch_env!("BMT_ADMIN_GITHUB_CLIENT_SECRET")
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key

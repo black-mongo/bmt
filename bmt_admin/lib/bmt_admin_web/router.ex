@@ -19,12 +19,6 @@ defmodule BmtAdminWeb.Router do
 
   use Kaffy.Routes, scope: "/admin", pipe_through: [:browser, :require_authenticated_user]
 
-  scope "/", BmtAdminWeb do
-    pipe_through [:browser, :require_authenticated_user]
-
-    get "/", PageController, :home
-  end
-
   # Other scopes may use custom stacks.
   # scope "/api", BmtAdminWeb do
   #   pipe_through :api
@@ -51,16 +45,11 @@ defmodule BmtAdminWeb.Router do
 
   scope "/", BmtAdminWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
-
+    get "/oauth/callbacks/:provider", OAuthCallbackController, :new
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{BmtAdminWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
       live "/users/log_in", UserLoginLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
     end
-
-    post "/users/log_in", UserSessionController, :create
   end
 
   scope "/", BmtAdminWeb do
@@ -69,6 +58,7 @@ defmodule BmtAdminWeb.Router do
     live_session :require_authenticated_user,
       on_mount: [{BmtAdminWeb.UserAuth, :ensure_authenticated}] do
       live "/users/settings", UserSettingsLive, :edit
+      live "/",  HomeLive, :new
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
     end
   end

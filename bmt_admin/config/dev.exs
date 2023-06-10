@@ -1,5 +1,9 @@
 import Config
 
+config :bmt_admin, :github,
+       client_id: System.fetch_env!("BMT_ADMIN_GITHUB_CLIENT_ID"),
+       client_secret: System.fetch_env!("BMT_ADMIN_GITHUB_CLIENT_SECRET")
+
 # Configure your database
 config :bmt_admin, BmtAdmin.Repo,
   username: "postgres",

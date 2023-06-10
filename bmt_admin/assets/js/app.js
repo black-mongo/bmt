@@ -16,6 +16,7 @@
 //
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
+import "flowbite/dist/flowbite.phoenix.js"
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
 import {Socket} from "phoenix"
