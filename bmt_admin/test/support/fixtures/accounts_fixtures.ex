@@ -28,4 +28,20 @@ defmodule BmtAdmin.AccountsFixtures do
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
     token
   end
+
+  @doc """
+  Generate a item.
+  """
+  def item_fixture(attrs \\ %{}) do
+    {:ok, item} =
+      attrs
+      |> Enum.into(%{
+        desc: "some desc",
+        name: "some name",
+        password: "some password"
+      })
+      |> BmtAdmin.Accounts.create_item()
+
+    item
+  end
 end
